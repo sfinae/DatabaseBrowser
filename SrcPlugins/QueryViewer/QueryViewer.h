@@ -41,6 +41,8 @@ private slots:
 
 private:
     void configModel(const QString &queryText);
+    void executeTransaction(const QStringList &sqlQuerys);
+    void showQueryError(const QSqlQuery &query);
 
     QScopedPointer<QSqlQueryModel> m_queryModel;
     TableView *sqlView;

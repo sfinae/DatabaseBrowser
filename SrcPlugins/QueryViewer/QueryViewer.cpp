@@ -10,6 +10,7 @@
 #include <QSqlQueryModel>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QTextStream>
 
 #include "QueryViewer.h"
 #include "TableView.h"
@@ -103,7 +104,17 @@ QString QueryViewer::statusTip() const
 
 void QueryViewer::onSubmitClicked()
 {
-    configModel(sqlEdit->toPlainText());
+    QString text = sqlEdit->toPlainText();
+    QStringList sqlQuerys = text.split(";", QString::SkipEmptyParts);
+
+    if (sqlQuerys.size() > 1)
+    {
+        executeTransaction(sqlQuerys);
+    }
+    else
+    {
+        configModel(text);
+    }
 }
 
 void QueryViewer::retranslate()
@@ -119,16 +130,53 @@ void QueryViewer::configModel(const QString &queryText)
     m_queryModel->clear();
     m_queryModel->setQuery(QSqlQuery(queryText, database));
 
-    if (m_queryModel->lastError().type() != QSqlError::NoError)
+    showQueryError(m_queryModel->query());
+}
+
+void QueryViewer::executeTransaction(const QStringList &sqlQuerys)
+{
+    QSqlQuery query(database);
+    QString lastSelectQuery;
+
+    database.transaction();
+    emit textMessage(tr("Transaction started"));
+
+    for (int i = 0; i < sqlQuerys.size(); ++i)
     {
-        emit textMessage(m_queryModel->lastError().text(), BaseViewer::Warning);
+        bool success = query.exec(sqlQuerys.at(i));
+        showQueryError(query);
+
+        if (!success)
+        {
+            database.rollback();
+            emit textMessage("Transaction reverted", BaseViewer::Warning);
+            return;
+        }
+
+        if (query.isSelect())
+        {
+            lastSelectQuery = sqlQuerys.at(i);
+        }
     }
-    else if (m_queryModel->query().isSelect())
+
+    database.commit();
+    emit textMessage("Transaction commited");
+
+    configModel(lastSelectQuery);
+}
+
+void QueryViewer::showQueryError(const QSqlQuery &query)
+{
+    if (query.lastError().type() != QSqlError::NoError)
+    {
+        emit textMessage(query.lastError().text(), BaseViewer::Error);
+    }
+    else if (query.isSelect())
     {
         emit textMessage(tr("Sql query executed successfully"));
     }
     else
     {
-        emit textMessage(tr("Query executed successfully, number affected rows: %1").arg(m_queryModel->query().numRowsAffected()));
+        emit textMessage(tr("Query executed successfully, number affected rows: %1").arg(query.numRowsAffected()));
     }
 }
