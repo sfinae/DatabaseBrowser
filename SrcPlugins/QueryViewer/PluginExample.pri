@@ -6,12 +6,14 @@ HEADERS += ./../../DatabaseBrowser/BaseViewer.h \
     ./QueryViewer.h \
     ./TableView.h \
     ./Highlighter.h \
+    QueryParser.h
 
 #Source files
 SOURCES += ./QueryViewer.cpp \
     ./TableView.cpp \
     ./Highlighter.cpp \
     ./../../DatabaseBrowser/abstractwidget.cpp \
+    QueryParser.cpp
 
 #Forms
 #FORMS += 

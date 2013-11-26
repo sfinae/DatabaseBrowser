@@ -10,12 +10,11 @@
 #include <QSqlQueryModel>
 #include <QSqlQuery>
 #include <QSqlError>
-#include <QTextStream>
 
 #include "QueryViewer.h"
 #include "TableView.h"
 #include "Highlighter.h"
-
+#include "QueryParser.h"
 
 QueryViewer::QueryViewer()
     : m_queryModel(new QSqlQueryModel())
@@ -105,7 +104,9 @@ QString QueryViewer::statusTip() const
 void QueryViewer::onSubmitClicked()
 {
     QString text = sqlEdit->toPlainText();
-    QStringList sqlQuerys = text.split(";", QString::SkipEmptyParts);
+    //QStringList sqlQuerys = text.split(";", QString::SkipEmptyParts);
+    QueryParser parser;
+    QStringList sqlQuerys = parser.parse(text);
 
     if (sqlQuerys.size() > 1)
     {

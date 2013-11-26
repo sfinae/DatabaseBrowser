@@ -27,6 +27,7 @@ Highlighter::Highlighter(QTextDocument *parent)
                     << "\\bexists\\b"
                     << "\\binner\\b"
                     << "\\bleft\\b"
+                    << "\\bfull\\b"
                     << "\\bright\\b"
                     << "\\binsert\\b"
                     << "\\binto\\b"
@@ -37,7 +38,11 @@ Highlighter::Highlighter(QTextDocument *parent)
                     << "\\brollback\\b"
                     << "\\bas\\b"
                     << "\\bbegin\\b"
-                    << "\\btransaction\\b";
+                    << "\\btransaction\\b"
+                    << "\\band\\b"
+                    << "\\bor\\b"
+                    << "\\bcreate\\b"
+                    << "\\breplace\\b";
 
     foreach (const QString &pattern, keywordPatterns)
     {
