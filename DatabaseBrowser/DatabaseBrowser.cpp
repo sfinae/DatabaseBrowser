@@ -76,6 +76,8 @@ DatabaseBrowser::DatabaseBrowser(QWidget *parent, Qt::WindowFlags flags)
             this, SLOT(onTreeWidgetItemActivated(const DatabaseItem&)));
     connect(dbViewer, SIGNAL(signalTreeWidgetRefreshed()), this, SLOT(onTreeWidgetRefreshed()));
 
+    qRegisterMetaType<BaseViewer::message>("BaseViewer::message");
+
     retranslate();
 }
 

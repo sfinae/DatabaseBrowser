@@ -1,4 +1,9 @@
 
+#include "QueryViewer.h"
+#include "TableView.h"
+#include "Highlighter.h"
+#include "QueryParser.h"
+
 #include <QtPlugin>
 #include <QTableView>
 #include <QTextEdit>
@@ -10,11 +15,7 @@
 #include <QSqlQueryModel>
 #include <QSqlQuery>
 #include <QSqlError>
-
-#include "QueryViewer.h"
-#include "TableView.h"
-#include "Highlighter.h"
-#include "QueryParser.h"
+#include <QDateTime>
 
 QueryViewer::QueryViewer()
     : m_queryModel(new QSqlQueryModel())
@@ -108,6 +109,8 @@ void QueryViewer::onSubmitClicked()
     QueryParser parser;
     QStringList sqlQuerys = parser.parse(text);
 
+    QDateTime startTime = QDateTime::currentDateTime();
+
     if (sqlQuerys.size() > 1)
     {
         executeTransaction(sqlQuerys);
@@ -116,6 +119,9 @@ void QueryViewer::onSubmitClicked()
     {
         configModel(text);
     }
+
+    const int executionTime = startTime.msecsTo(QDateTime::currentDateTime());
+    emit textMessage(tr("Query execution time: %1 ms").arg(executionTime));
 }
 
 void QueryViewer::retranslate()
