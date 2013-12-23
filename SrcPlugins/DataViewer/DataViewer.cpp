@@ -1,4 +1,7 @@
 
+#include "DataViewer.h"
+#include "TableView.h"
+
 #include <QtPlugin>
 #include <QSqlTableModel>
 #include <QSqlRecord>
@@ -8,20 +11,21 @@
 #include <QSplitter>
 #include <QTableView>
 #include <QVBoxLayout>
-
-#include "DataViewer.h"
-#include "TableView.h"
-
-
+#include <QMouseEvent>
+#include <QMenu>
+#include <QDateTime>
 
 DataViewer::DataViewer()
 {
     tableShema = new TableView;
-    tableData = new TableView;
+    m_tableData = new TableView;
+
+    // context menu
+    (*m_tableData)->viewport()->installEventFilter(this);
 
     splitter = new QSplitter(Qt::Vertical, this);
     splitter->addWidget(tableShema);
-    splitter->addWidget(tableData);
+    splitter->addWidget(m_tableData);
 
     QVBoxLayout *box = new QVBoxLayout;
     box->addWidget(splitter);
@@ -37,6 +41,45 @@ DataViewer::DataViewer()
 DataViewer::~DataViewer()
 {
     // empty
+}
+
+bool DataViewer::eventFilter(QObject *watched, QEvent *event)
+{
+    Q_UNUSED(watched);
+
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        const QPoint globalMousePos = mouseEvent->globalPos();
+
+        QTableView *tableView = *m_tableData;
+        if (tableView)
+        {
+            const QModelIndex tableModelIndex = tableView->indexAt(mouseEvent->pos());
+            if (tableModelIndex.isValid())
+            {
+                QVariant data = tableView->model()->data(tableModelIndex);
+                bool ok = false;
+                int timestamp = data.toInt(&ok);
+                if (ok)
+                {
+                    QMenu menu;
+                    QAction *action = new QAction(tr("Show timestamp"), this);
+                    menu.addAction(action);
+                    if (menu.exec(globalMousePos))
+                    {
+                        QMessageBox::information(this, QString(), QDateTime::fromTime_t(timestamp).toString());
+                    }
+                }
+            }
+        }
+        else
+        {
+            Q_ASSERT(false && "You souldn't be here");
+        }
+    }
+
+    return BaseViewer::eventFilter(watched, event);
 }
 
 BaseViewer* DataViewer::clone() const
@@ -95,13 +138,13 @@ void DataViewer::onDatabaseItemActivated(const DatabaseItem &item)
 
     //if (model->lastError().type() != QSqlError::NoError)
         //emit statusMessage(model->lastError().text());
-    (*tableData)->setModel(modelData);
-    (*tableData)->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
-    (*tableData)->resizeColumnsToContents();
-    tableData->setText(tr("Data %1").arg(item.m_value));
+    (*m_tableData)->setModel(modelData);
+
+    (*m_tableData)->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+    (*m_tableData)->resizeColumnsToContents();
+    m_tableData->setText(tr("Data %1").arg(item.m_value));
 
     m_sqlDataModel.reset(modelData);
-
 }
 
 void DataViewer::onDatabaseItemRemoved()
@@ -140,7 +183,7 @@ void DataViewer::retranslate()
     m_shemaModel->setHeaderData(6, Qt::Horizontal, tr("Default"));
 
     tableShema->setText(tr("Sheme %1").arg(""));
-    tableData->setText(tr("Data %1").arg(""));
+    m_tableData->setText(tr("Data %1").arg(""));
 }
 
 //Q_EXPORT_PLUGIN2(dataviewer, DataViewer)

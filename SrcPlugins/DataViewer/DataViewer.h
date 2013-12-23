@@ -9,6 +9,7 @@ class QTableView;
 class QSplitter;
 class QStandardItemModel;
 class QSqlTableModel;
+class QEvent;
 
 class DatabaseViewer;
 class TableView;
@@ -22,6 +23,8 @@ class DataViewer : public BaseViewer
 public:
     DataViewer();
     virtual ~DataViewer();
+
+    virtual bool eventFilter(QObject *watched, QEvent *event);
 
     virtual BaseViewer* clone() const;
 
@@ -40,7 +43,7 @@ private:
 
     QSplitter *splitter;
     TableView *tableShema;
-    TableView *tableData;
+    TableView *m_tableData;
 
     QScopedPointer<QStandardItemModel> m_shemaModel;
     QScopedPointer<QSqlTableModel> m_sqlDataModel;
