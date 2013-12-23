@@ -138,7 +138,7 @@ void DatabaseBrowser::onPluginAction(QAction* action)
     BaseViewer *bv = vector.at(action->data().toInt())->clone();
 
     connect(bv, SIGNAL(textMessage(const QString&, BaseViewer::message)),
-            this, SLOT(onTextEditAddString(const QString&, BaseViewer::message)));
+            this, SLOT(onTextEditAddString(const QString&, BaseViewer::message)), Qt::QueuedConnection);
 
     int index = tabWidget->addTab(bv, makeTabText(bv));
     tabWidget->setCurrentIndex(index);
