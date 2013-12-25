@@ -139,17 +139,7 @@ void DatabaseBrowser::onPluginAction(QAction* action)
 {
     BaseViewer *bv = vector.at(action->data().toInt())->clone();
 
-    connect(bv, SIGNAL(textMessage(const QString&, BaseViewer::message)),
-            this, SLOT(onTextEditAddString(const QString&, BaseViewer::message)), Qt::QueuedConnection);
-
-    int index = tabWidget->addTab(bv, makeTabText(bv));
-    tabWidget->setCurrentIndex(index);
-
-    DatabaseItem item = dbViewer->currentDatabaseItem();
-    if (item.isValid())
-    {
-        changeTabData(bv, item, index);
-    }
+    createTab(bv);
 }
 
 QString DatabaseBrowser::makeTabText(BaseViewer *baseViewer) const
@@ -283,12 +273,22 @@ void DatabaseBrowser::onTreeWidgetItemActivated(const DatabaseItem &item)
 {
     int index = tabWidget->currentIndex();
 
+    BaseViewer *data = NULL;
+
     if (index < 0)
     {
-        return;
-    }
+        if (vector.empty())
+        {
+            return;
+        }
 
-    BaseViewer* data = qobject_cast<BaseViewer*>(tabWidget->widget(index));
+        data = vector.at(0)->clone();
+        createTab(data);
+    }
+    else
+    {
+        data = qobject_cast<BaseViewer*>(tabWidget->widget(index));
+    }
 
     if (data)
     {
@@ -318,6 +318,21 @@ void DatabaseBrowser::onTreeWidgetRefreshed()
     if (data)
     {
         //data->onTreeWidgetRefreshed();
+    }
+}
+
+void DatabaseBrowser::createTab(BaseViewer *baseViewer)
+{
+    connect(baseViewer, SIGNAL(textMessage(const QString&, BaseViewer::message)),
+            this, SLOT(onTextEditAddString(const QString&, BaseViewer::message)), Qt::QueuedConnection);
+
+    int index = tabWidget->addTab(baseViewer, makeTabText(baseViewer));
+    tabWidget->setCurrentIndex(index);
+
+    DatabaseItem item = dbViewer->currentDatabaseItem();
+    if (item.isValid())
+    {
+        changeTabData(baseViewer, item, index);
     }
 }
 

@@ -53,6 +53,7 @@ private:
     void changeTabData(BaseViewer *data,
                        const DatabaseItem &item,
                        const int tabIndex);
+    void createTab(BaseViewer *baseViewer);
 
     QHash<QWidget*, QTreeWidgetItem*> m_tabToTreeMap;
     DatabaseViewer *dbViewer;
