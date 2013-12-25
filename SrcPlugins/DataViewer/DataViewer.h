@@ -10,6 +10,7 @@ class QSplitter;
 class QStandardItemModel;
 class QSqlTableModel;
 class QEvent;
+class QAction;
 
 class DatabaseViewer;
 class TableView;
@@ -44,6 +45,8 @@ private:
     QSplitter *splitter;
     TableView *tableShema;
     TableView *m_tableData;
+
+    QAction *m_timestampAction;
 
     QScopedPointer<QStandardItemModel> m_shemaModel;
     QScopedPointer<QSqlTableModel> m_sqlDataModel;

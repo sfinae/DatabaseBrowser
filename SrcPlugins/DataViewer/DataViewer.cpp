@@ -34,6 +34,9 @@ DataViewer::DataViewer()
     splitter->setStretchFactor(0, 0);
     splitter->setStretchFactor(1, 1);
 
+    // on right click shows timestamp
+    m_timestampAction = new QAction(tr("Show timestamp"), this);
+
     createModels();
     retranslate();
 }
@@ -64,8 +67,7 @@ bool DataViewer::eventFilter(QObject *watched, QEvent *event)
                 if (ok)
                 {
                     QMenu menu;
-                    QAction *action = new QAction(tr("Show timestamp"), this);
-                    menu.addAction(action);
+                    menu.addAction(m_timestampAction);
                     if (menu.exec(globalMousePos))
                     {
                         QMessageBox::information(this, QString(), QDateTime::fromTime_t(timestamp).toString());
