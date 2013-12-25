@@ -209,7 +209,11 @@ void DatabaseBrowser::createMenu()
 
     menuBar()->addMenu(menuConnect);
     menuBar()->addMenu(menuPlugins);
-    menuBar()->addMenu(languageMenu);
+
+    if (languageMenu->actions().size() > 0)
+    {
+        menuBar()->addMenu(languageMenu);
+    }
 }
 
 void DatabaseBrowser::createStatusbar()
