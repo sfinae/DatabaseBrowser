@@ -45,16 +45,16 @@ DataViewer::~DataViewer()
 
 bool DataViewer::eventFilter(QObject *watched, QEvent *event)
 {
-    Q_UNUSED(watched);
-
     if (event->type() == QEvent::MouseButtonPress)
     {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
-        const QPoint globalMousePos = mouseEvent->globalPos();
-
-        QTableView *tableView = *m_tableData;
-        if (tableView)
+        if (mouseEvent->button() == Qt::RightButton)
         {
+            const QPoint globalMousePos = mouseEvent->globalPos();
+
+            QTableView *tableView = *m_tableData;
+            Q_ASSERT(tableView);
+
             const QModelIndex tableModelIndex = tableView->indexAt(mouseEvent->pos());
             if (tableModelIndex.isValid())
             {
@@ -72,10 +72,6 @@ bool DataViewer::eventFilter(QObject *watched, QEvent *event)
                     }
                 }
             }
-        }
-        else
-        {
-            Q_ASSERT(false && "You souldn't be here");
         }
     }
 
