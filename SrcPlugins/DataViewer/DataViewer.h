@@ -1,19 +1,11 @@
 #ifndef DATA_VIEWER_H
 #define DATA_VIEWER_H
 
-#include <QScopedPointer>
-
 #include "BaseViewer.h"
 
-class QTableView;
-class QSplitter;
-class QStandardItemModel;
-class QSqlTableModel;
-class QEvent;
-class QAction;
+#include <QScopedPointer>
 
-class DatabaseViewer;
-class TableView;
+class DataViewerPrivate;
 
 class DataViewer : public BaseViewer
 {
@@ -40,16 +32,7 @@ protected:
     virtual void retranslate();
 
 private:
-    void createModels();
-
-    QSplitter *splitter;
-    TableView *tableShema;
-    TableView *m_tableData;
-
-    QAction *m_timestampAction;
-
-    QScopedPointer<QStandardItemModel> m_shemaModel;
-    QScopedPointer<QSqlTableModel> m_sqlDataModel;
+    QScopedPointer<DataViewerPrivate> d_ptr;
 };
 
 #endif // DATA_VIEWER_H

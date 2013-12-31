@@ -1,6 +1,5 @@
 
 #include "DataViewer.h"
-#include "TableView.h"
 
 #include <QtPlugin>
 #include <QSqlTableModel>
@@ -8,36 +7,67 @@
 #include <QSqlField>
 #include <QStandardItemModel>
 #include <QMessageBox>
-#include <QSplitter>
+#include <QTabWidget>
 #include <QTableView>
 #include <QVBoxLayout>
 #include <QMouseEvent>
 #include <QMenu>
 #include <QDateTime>
 
-DataViewer::DataViewer()
+namespace
 {
-    tableShema = new TableView;
-    m_tableData = new TableView;
+    enum DataViewerTabIndex
+    {
+        Data = 0,
+        Scheme
+    };
+
+    const char *c_dataTable = QT_TRANSLATE_NOOP("DataViewer", "Data %1");
+    const char *c_schemeTable = QT_TRANSLATE_NOOP("DataViewer", "Scheme %1");
+}
+
+class DataViewerPrivate
+{
+public:
+    void createModels();
+
+    QTabWidget *m_tab;
+    QTableView *m_tableShema;
+    QTableView *m_tableData;
+
+    QAction *m_timestampAction;
+
+    QScopedPointer<QStandardItemModel> m_shemaModel;
+    QScopedPointer<QSqlTableModel> m_sqlDataModel;
+};
+
+void DataViewerPrivate::createModels()
+{
+    m_shemaModel.reset(new QStandardItemModel(m_tableShema));
+    m_shemaModel->insertColumns(0, 7);
+}
+
+DataViewer::DataViewer()
+    : d_ptr(new DataViewerPrivate())
+{
+    d_ptr->m_tableShema = new QTableView(this);
+    d_ptr->m_tableData = new QTableView(this);
 
     // context menu
-    (*m_tableData)->viewport()->installEventFilter(this);
+    d_ptr->m_tableData->viewport()->installEventFilter(this);
 
-    splitter = new QSplitter(Qt::Vertical, this);
-    splitter->addWidget(tableShema);
-    splitter->addWidget(m_tableData);
+    d_ptr->m_tab = new QTabWidget(this);
+    d_ptr->m_tab->addTab(d_ptr->m_tableData, tr(::c_dataTable).arg(""));
+    d_ptr->m_tab->addTab(d_ptr->m_tableShema, tr(::c_schemeTable).arg(""));
 
     QVBoxLayout *box = new QVBoxLayout;
-    box->addWidget(splitter);
+    box->addWidget(d_ptr->m_tab);
     setLayout(box);
 
-    splitter->setStretchFactor(0, 0);
-    splitter->setStretchFactor(1, 1);
-
     // on right click shows timestamp
-    m_timestampAction = new QAction(tr("Show timestamp"), this);
+    d_ptr->m_timestampAction = new QAction(tr("Show timestamp"), this);
 
-    createModels();
+    d_ptr->createModels();
     retranslate();
 }
 
@@ -55,7 +85,7 @@ bool DataViewer::eventFilter(QObject *watched, QEvent *event)
         {
             const QPoint globalMousePos = mouseEvent->globalPos();
 
-            QTableView *tableView = *m_tableData;
+            QTableView *tableView = d_ptr->m_tableData;
             Q_ASSERT(tableView);
 
             const QModelIndex tableModelIndex = tableView->indexAt(mouseEvent->pos());
@@ -67,7 +97,7 @@ bool DataViewer::eventFilter(QObject *watched, QEvent *event)
                 if (ok)
                 {
                     QMenu menu;
-                    menu.addAction(m_timestampAction);
+                    menu.addAction(d_ptr->m_timestampAction);
                     if (menu.exec(globalMousePos))
                     {
                         QMessageBox::information(this, QString(), QDateTime::fromTime_t(timestamp).toString());
@@ -85,13 +115,6 @@ BaseViewer* DataViewer::clone() const
     return new DataViewer();
 }
 
-void DataViewer::createModels()
-{
-    m_shemaModel.reset(new QStandardItemModel(tableShema));
-    m_shemaModel->insertColumns(0, 7);
-}
-
-
 void DataViewer::onDatabaseItemActivated(const DatabaseItem &item)
 {
     if ((DatabaseItem::Table != item.m_type) &&
@@ -103,30 +126,31 @@ void DataViewer::onDatabaseItemActivated(const DatabaseItem &item)
     // for table tableShema
     QSqlRecord record = item.m_database.record(item.m_value);
 
-    m_shemaModel->removeRows(0, m_shemaModel->rowCount());
-    m_shemaModel->insertRows(0, record.count());
+    d_ptr->m_shemaModel->removeRows(0, d_ptr->m_shemaModel->rowCount());
+    d_ptr->m_shemaModel->insertRows(0, record.count());
 
     for (int i = 0; i < record.count(); ++i)
     {
         QSqlField field = record.field(i);
 
-        m_shemaModel->setData(m_shemaModel->index(i, 0), field.name());
-        m_shemaModel->setData(m_shemaModel->index(i, 1),
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 0), field.name());
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 1),
                               field.type() == QVariant::Invalid ? "???" : QString(QVariant::typeToName(field.type())));
-        m_shemaModel->setData(m_shemaModel->index(i, 2),
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 2),
                               (field.length() < 0) ? QVariant("???") : field.length());
-        m_shemaModel->setData(m_shemaModel->index(i, 3),
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 3),
                               (field.precision() < 0) ? QVariant("???") : field.precision());
-        m_shemaModel->setData(m_shemaModel->index(i, 4),
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 4),
                               field.requiredStatus() == QSqlField::Unknown ? "???" : QVariant(bool(field.requiredStatus())));
-        m_shemaModel->setData(m_shemaModel->index(i, 5), field.isAutoValue());
-        m_shemaModel->setData(m_shemaModel->index(i, 6), field.defaultValue());
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 5), field.isAutoValue());
+        d_ptr->m_shemaModel->setData(d_ptr->m_shemaModel->index(i, 6), field.defaultValue());
     }
 
-    (*tableShema)->setModel(m_shemaModel.data());
-    (*tableShema)->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    (*tableShema)->resizeColumnsToContents();
-    tableShema->setText(tr("Sheme %1").arg(item.m_value));
+    d_ptr->m_tableShema->setModel(d_ptr->m_shemaModel.data());
+    d_ptr->m_tableShema->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    d_ptr->m_tableShema->resizeColumnsToContents();
+
+    d_ptr->m_tab->setTabText(::Scheme, tr(::c_schemeTable).arg(item.m_value));
 
     // for table tableData
     QSqlTableModel *modelData = new QSqlTableModel(0, item.m_database);
@@ -134,15 +158,13 @@ void DataViewer::onDatabaseItemActivated(const DatabaseItem &item)
     modelData->setTable(item.m_value);
     modelData->select();
 
-    //if (model->lastError().type() != QSqlError::NoError)
-        //emit statusMessage(model->lastError().text());
-    (*m_tableData)->setModel(modelData);
+    d_ptr->m_tableData->setModel(modelData);
+    d_ptr->m_tableData->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+    d_ptr->m_tableData->resizeColumnsToContents();
 
-    (*m_tableData)->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
-    (*m_tableData)->resizeColumnsToContents();
-    m_tableData->setText(tr("Data %1").arg(item.m_value));
+    d_ptr->m_tab->setTabText(::Data, tr(::c_dataTable).arg(item.m_value));
 
-    m_sqlDataModel.reset(modelData);
+    d_ptr->m_sqlDataModel.reset(modelData);
 }
 
 void DataViewer::onDatabaseItemRemoved()
@@ -172,16 +194,16 @@ QString DataViewer::statusTip() const
 
 void DataViewer::retranslate()
 {
-    m_shemaModel->setHeaderData(0, Qt::Horizontal, tr("Name"));
-    m_shemaModel->setHeaderData(1, Qt::Horizontal, tr("Type"));
-    m_shemaModel->setHeaderData(2, Qt::Horizontal, tr("Length"));
-    m_shemaModel->setHeaderData(3, Qt::Horizontal, tr("Precision"));
-    m_shemaModel->setHeaderData(4, Qt::Horizontal, tr("Mandatory"));
-    m_shemaModel->setHeaderData(5, Qt::Horizontal, tr("Automatic"));
-    m_shemaModel->setHeaderData(6, Qt::Horizontal, tr("Default"));
+    d_ptr->m_shemaModel->setHeaderData(0, Qt::Horizontal, tr("Name"));
+    d_ptr->m_shemaModel->setHeaderData(1, Qt::Horizontal, tr("Type"));
+    d_ptr->m_shemaModel->setHeaderData(2, Qt::Horizontal, tr("Length"));
+    d_ptr->m_shemaModel->setHeaderData(3, Qt::Horizontal, tr("Precision"));
+    d_ptr->m_shemaModel->setHeaderData(4, Qt::Horizontal, tr("Mandatory"));
+    d_ptr->m_shemaModel->setHeaderData(5, Qt::Horizontal, tr("Automatic"));
+    d_ptr->m_shemaModel->setHeaderData(6, Qt::Horizontal, tr("Default"));
 
-    tableShema->setText(tr("Sheme %1").arg(""));
-    m_tableData->setText(tr("Data %1").arg(""));
+    d_ptr->m_tab->setTabText(::Scheme, tr(::c_schemeTable).arg(""));
+    d_ptr->m_tab->setTabText(::Data, tr(::c_dataTable).arg(""));
 }
 
 //Q_EXPORT_PLUGIN2(dataviewer, DataViewer)

@@ -3,11 +3,9 @@
 HEADERS += ./../../DatabaseBrowser/BaseViewer.h \
     ./../../DatabaseBrowser/abstractwidget.h \
 	./DataViewer.h \
-	./TableView.h
 
 #Source files
 SOURCES += DataViewer.cpp \
-    ./TableView.cpp \
     ./../../DatabaseBrowser/abstractwidget.cpp \
 
 #Forms
