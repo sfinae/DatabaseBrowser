@@ -222,7 +222,7 @@ void DatabaseBrowser::createStatusbar()
 void DatabaseBrowser::onAddConnection()
 {
     static int connectionNumber = 1;
-    ConnectDialog dlg(connectionNumber++);
+    ConnectionDialog dlg(connectionNumber++);
     if (dlg.exec() == QDialog::Accepted)
     {
         dbViewer->addDatabase(dlg.database());

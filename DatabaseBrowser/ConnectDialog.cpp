@@ -1,4 +1,11 @@
 
+#include "ConnectDialog.h"
+
+#include <QSettings>
+#include <QComboBox>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QFrame>
 #include <QGridLayout>
 #include <QVBoxLayout>
@@ -7,188 +14,219 @@
 #include <QSqlError>
 #include <QEvent>
 
-#include "ConnectDialog.h"
-
-ConnectDialog::ConnectDialog(int numberOfConnection, QWidget *parent, Qt::WindowFlags flags)
-    : QDialog(parent, flags)
-    , connectionNumber(numberOfConnection)
+class ConnectionDialogPrivate
 {
+public:
+    QSqlDatabase m_database;
+
+    QSettings *m_loginSettings;
+
+    int m_connectionNumber;
+
+    // ui
+    QComboBox *m_comboDriver;
+    QLineEdit *m_editHostName;
+    QLineEdit *m_editDatabaseName;
+    QLineEdit *m_editUserName;
+    QLineEdit *m_editPassword;
+    QLineEdit *m_editPortNumber;
+
+    QLabel *m_labelDriver;
+    QLabel *m_labelHostName;
+    QLabel *m_labelDatabaseName;
+    QLabel *m_labelUserName;
+    QLabel *m_labelPassword;
+    QLabel *m_labelPortNumber;
+
+    QPushButton *m_buttonConnect;
+    QPushButton *m_buttonMore;
+};
+
+ConnectionDialog::ConnectionDialog(int numberOfConnection,
+                                   QWidget *parent,
+                                   Qt::WindowFlags flags)
+    : QDialog(parent, flags)
+    , d_ptr(new ConnectionDialogPrivate())
+{
+    d_ptr->m_connectionNumber = numberOfConnection;
+
     QFrame *frame = new QFrame(this);
     frame->setFrameShape(QFrame::Box);
     //frame->hide();
 
-    labelDriver = new QLabel(this);
-    comboDriver = new QComboBox(this);
+    d_ptr->m_labelDriver = new QLabel(this);
+    d_ptr->m_comboDriver = new QComboBox(this);
 
-    labelUserName = new QLabel(this);
-    editUserName = new QLineEdit(this);
+    d_ptr->m_labelUserName = new QLabel(this);
+    d_ptr->m_editUserName = new QLineEdit(this);
 
-    labelPassword = new QLabel(this);
-    editPassword = new QLineEdit(this);
-    editPassword->setEchoMode(QLineEdit::Password);
+    d_ptr->m_labelPassword = new QLabel(this);
+    d_ptr->m_editPassword = new QLineEdit(this);
+    d_ptr->m_editPassword->setEchoMode(QLineEdit::Password);
 
-    labelHostName = new QLabel(this);
-    editHostName = new QLineEdit(this);
+    d_ptr->m_labelHostName = new QLabel(this);
+    d_ptr->m_editHostName = new QLineEdit(this);
 
-    labelDatabaseName = new QLabel(this);
-    editDatabaseName = new QLineEdit(this);
+    d_ptr->m_labelDatabaseName = new QLabel(this);
+    d_ptr->m_editDatabaseName = new QLineEdit(this);
 
-    labelPortNumber = new QLabel(this);
-    editPortNumber = new QLineEdit(this);
-    editPortNumber->setInputMask("000000");
+    d_ptr->m_labelPortNumber = new QLabel(this);
+    d_ptr->m_editPortNumber = new QLineEdit(this);
+    d_ptr->m_editPortNumber->setInputMask("000000");
 
-    buttonConnect = new QPushButton(this);
-    buttonConnect->setDefault(true);
-
-    //buttonMore = new QPushButton(this);
-    //buttonMore->setCheckable(true);
+    d_ptr->m_buttonConnect = new QPushButton(this);
+    d_ptr->m_buttonConnect->setDefault(true);
 
     QGridLayout *frameLayout = new QGridLayout(frame);
-    frameLayout->addWidget(labelUserName, 0, 0);
-    frameLayout->addWidget(editUserName, 0, 1);
-    frameLayout->addWidget(labelPassword, 1, 0);
-    frameLayout->addWidget(editPassword, 1, 1);
-    frameLayout->addWidget(labelHostName, 2, 0);
-    frameLayout->addWidget(editHostName, 2, 1);
-    frameLayout->addWidget(labelDatabaseName, 3, 0);
-    frameLayout->addWidget(editDatabaseName, 3, 1);
-    frameLayout->addWidget(labelPortNumber, 4, 0);
-    frameLayout->addWidget(editPortNumber, 4, 1);
+    frameLayout->addWidget(d_ptr->m_labelUserName, 0, 0);
+    frameLayout->addWidget(d_ptr->m_editUserName, 0, 1);
+    frameLayout->addWidget(d_ptr->m_labelPassword, 1, 0);
+    frameLayout->addWidget(d_ptr->m_editPassword, 1, 1);
+    frameLayout->addWidget(d_ptr->m_labelHostName, 2, 0);
+    frameLayout->addWidget(d_ptr->m_editHostName, 2, 1);
+    frameLayout->addWidget(d_ptr->m_labelDatabaseName, 3, 0);
+    frameLayout->addWidget(d_ptr->m_editDatabaseName, 3, 1);
+    frameLayout->addWidget(d_ptr->m_labelPortNumber, 4, 0);
+    frameLayout->addWidget(d_ptr->m_editPortNumber, 4, 1);
 
     QVBoxLayout *buttonLayout = new QVBoxLayout;
-    buttonLayout->addWidget(buttonConnect);
-    //buttonLayout->addStretch();
-    //buttonLayout->addWidget(buttonMore);
+    buttonLayout->addWidget(d_ptr->m_buttonConnect);
 
     QGridLayout *layout = new QGridLayout(this);
-    layout->addWidget(labelDriver, 0, 0);
-    layout->addWidget(comboDriver, 0, 1);
+    layout->addWidget(d_ptr->m_labelDriver, 0, 0);
+    layout->addWidget(d_ptr->m_comboDriver, 0, 1);
     layout->addWidget(frame, 1, 0, 1, 3);
     layout->addLayout(buttonLayout, 0, 2);
 
     //layout->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(layout);
 
-    loginSettings = new QSettings("MichaelCompany", "DBMConverter", this);
+    d_ptr->m_loginSettings = new QSettings("MichaelCompany", "DBMConverter", this);
 
-    QString driver = loginSettings->value("Login/Driver").toString();
+    QString driver = d_ptr->m_loginSettings->value("Login/Driver").toString();
     if (!driver.isEmpty())
     {
-        for (int i = 0; i < comboDriver->count(); ++i)
+        for (int i = 0; i < d_ptr->m_comboDriver->count(); ++i)
         {
-            if (comboDriver->itemText(i) == driver)
+            if (d_ptr->m_comboDriver->itemText(i) == driver)
             {
-                comboDriver->setCurrentIndex(i);
+                d_ptr->m_comboDriver->setCurrentIndex(i);
                 break;
             }
         }
     }
 
-    editHostName->setText(loginSettings->value("Login/HostName").toString());
-    editDatabaseName->setText(loginSettings->value("Login/DatabaseName").toString());
-    editUserName->setText(loginSettings->value("Login/UserName").toString());
-    editPassword->setText(QString::null);
-    editPortNumber->setText(loginSettings->value("Login/PortNumber").toString());
+    d_ptr->m_editHostName->setText(d_ptr->m_loginSettings->value("Login/HostName").toString());
+    d_ptr->m_editDatabaseName->setText(d_ptr->m_loginSettings->value("Login/DatabaseName").toString());
+    d_ptr->m_editUserName->setText(d_ptr->m_loginSettings->value("Login/UserName").toString());
+    d_ptr->m_editPassword->setText(QString::null);
+    d_ptr->m_editPortNumber->setText(d_ptr->m_loginSettings->value("Login/PortNumber").toString());
 
-    connect(buttonConnect, SIGNAL(clicked()), this, SLOT(onConnect()));
-    //connect(buttonMore, SIGNAL(toggled(bool)), frame, SLOT(setVisible(bool)));
-    connect(comboDriver, SIGNAL(currentIndexChanged(int)), this, SLOT(onDatabaseDriverChanged(int)));
+    connect(d_ptr->m_buttonConnect, SIGNAL(clicked()), this, SLOT(onConnect()));
+    connect(d_ptr->m_comboDriver, SIGNAL(currentIndexChanged(int)), this, SLOT(onDatabaseDriverChanged(int)));
 
     QStringList listOfDatabase = QSqlDatabase::drivers();
-    comboDriver->addItems(listOfDatabase);
+    d_ptr->m_comboDriver->addItems(listOfDatabase);
 
     retranslate();
 }
 
-QSqlDatabase ConnectDialog::database() const
+ConnectionDialog::~ConnectionDialog()
 {
-    Q_ASSERT(dataBase.isValid());
-    return dataBase;
+    // empty
 }
 
-void ConnectDialog::onConnect()
+QSqlDatabase ConnectionDialog::database() const
 {
-    dataBase = QSqlDatabase::addDatabase(comboDriver->currentText(), QString("connect%1").arg(connectionNumber));
+    Q_ASSERT(d_ptr->m_database.isValid());
+    return d_ptr->m_database;
+}
 
-    dataBase.setHostName(editHostName->text());
-    dataBase.setDatabaseName(editDatabaseName->text());
-    dataBase.setUserName(editUserName->text());
-    dataBase.setPassword(editPassword->text());
-    dataBase.setPort(editPortNumber->text().toInt());
+void ConnectionDialog::onConnect()
+{
+    d_ptr->m_database = QSqlDatabase::addDatabase(d_ptr->m_comboDriver->currentText(),
+                                                  QString("connect%1").arg(d_ptr->m_connectionNumber));
+
+    d_ptr->m_database.setHostName(d_ptr->m_editHostName->text());
+    d_ptr->m_database.setDatabaseName(d_ptr->m_editDatabaseName->text());
+    d_ptr->m_database.setUserName(d_ptr->m_editUserName->text());
+    d_ptr->m_database.setPassword(d_ptr->m_editPassword->text());
+    d_ptr->m_database.setPort(d_ptr->m_editPortNumber->text().toInt());
 
     QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-    bool ok = dataBase.open();
+    bool ok = d_ptr->m_database.open();
     QApplication::restoreOverrideCursor();
 
     if (ok)
     {
-        loginSettings->beginGroup("Login");
-        loginSettings->setValue("HostName",		editHostName->text());
-        loginSettings->setValue("DatabaseName", editDatabaseName->text());
-        loginSettings->setValue("UserName",		editUserName->text());
-        loginSettings->setValue("PortNumber",	editPortNumber->text());
-        loginSettings->setValue("Driver",		comboDriver->currentText());
-        loginSettings->endGroup();
+        d_ptr->m_loginSettings->beginGroup("Login");
+        d_ptr->m_loginSettings->setValue("HostName", d_ptr->m_editHostName->text());
+        d_ptr->m_loginSettings->setValue("DatabaseName", d_ptr->m_editDatabaseName->text());
+        d_ptr->m_loginSettings->setValue("UserName", d_ptr->m_editUserName->text());
+        d_ptr->m_loginSettings->setValue("PortNumber", d_ptr->m_editPortNumber->text());
+        d_ptr->m_loginSettings->setValue("Driver", d_ptr->m_comboDriver->currentText());
+        d_ptr->m_loginSettings->endGroup();
+
         accept();
         return;
     }
     else
     {
-        QSqlDatabase::removeDatabase(QString("connect%1").arg(connectionNumber));
-        QMessageBox::critical(0, tr("Can\'t open database "), dataBase.lastError().text());
+        QSqlDatabase::removeDatabase(QString("connect%1").arg(d_ptr->m_connectionNumber));
+        QMessageBox::critical(0, tr("Can\'t open database "), d_ptr->m_database.lastError().text());
     }
 
     //reject();
 }
 
-void ConnectDialog::onDatabaseDriverChanged(int driverIndex)
+void ConnectionDialog::onDatabaseDriverChanged(int driverIndex)
 {
-    QString driver = comboDriver->itemText(driverIndex);
+    QString driver = d_ptr->m_comboDriver->itemText(driverIndex);
 
     if (driver == "QSQLITE")
     {
-        labelHostName->hide();
-        editHostName->hide();
+        d_ptr->m_labelHostName->hide();
+        d_ptr->m_editHostName->hide();
 
-        labelUserName->hide();
-        editUserName->hide();
+        d_ptr->m_labelUserName->hide();
+        d_ptr->m_editUserName->hide();
 
-        labelPassword->hide();
-        editPassword->hide();
+        d_ptr->m_labelPassword->hide();
+        d_ptr->m_editPassword->hide();
 
-        labelPortNumber->hide();
-        editPortNumber->hide();
+        d_ptr->m_labelPortNumber->hide();
+        d_ptr->m_editPortNumber->hide();
     }
     else
     {
-        labelHostName->show();
-        editHostName->show();
+        d_ptr->m_labelHostName->show();
+        d_ptr->m_editHostName->show();
 
-        labelUserName->show();
-        editUserName->show();
+        d_ptr->m_labelUserName->show();
+        d_ptr->m_editUserName->show();
 
-        labelPassword->show();
-        editPassword->show();
+        d_ptr->m_labelPassword->show();
+        d_ptr->m_editPassword->show();
 
-        labelPortNumber->show();
-        editPortNumber->show();
+        d_ptr->m_labelPortNumber->show();
+        d_ptr->m_editPortNumber->show();
     }
 }
 
-void ConnectDialog::retranslate()
+void ConnectionDialog::retranslate()
 {
-    labelDriver->setText(tr("Database type"));
-    labelUserName->setText(tr("User"));
-    labelPassword->setText(tr("Password"));
-    labelHostName->setText(tr("Host"));
-    labelDatabaseName->setText(tr("Database"));
-    labelPortNumber->setText(tr("Port"));
-    buttonConnect->setText(tr("Connect"));
-    //buttonMore->setText(tr("More"));
+    d_ptr->m_labelDriver->setText(tr("Database type"));
+    d_ptr->m_labelUserName->setText(tr("User"));
+    d_ptr->m_labelPassword->setText(tr("Password"));
+    d_ptr->m_labelHostName->setText(tr("Host"));
+    d_ptr->m_labelDatabaseName->setText(tr("Database"));
+    d_ptr->m_labelPortNumber->setText(tr("Port"));
+    d_ptr->m_buttonConnect->setText(tr("Connect"));
+
     setWindowTitle(tr("Connection do database"));
 }
 
-void ConnectDialog::changeEvent(QEvent *event)
+void ConnectionDialog::changeEvent(QEvent *event)
 {
     if (event->type() == QEvent::LanguageChange)
     {
