@@ -164,10 +164,6 @@ void DatabaseBrowser::createActions()
     actionRemoveConnection->setIcon(QIcon(":/DBMConverter/Resources/remove_32x32.png"));
     connect(actionRemoveConnection, SIGNAL(triggered()), this, SLOT(onRemoveConnection()));
 
-    actionQuit = new QAction(this);
-    actionQuit->setIcon(QIcon(":/DBMConverter/Resources/door_32x32.png"));
-    connect(actionQuit, SIGNAL(triggered()), this, SLOT(close()));
-
     actionViewBrowser = new QAction(this);
     actionViewBrowser->setCheckable(true);
     actionViewBrowser->setChecked(true);
@@ -190,8 +186,6 @@ void DatabaseBrowser::createToolbar()
 {
     toolBar->addAction(actionAddConnection);
     toolBar->addAction(actionRemoveConnection);
-    toolBar->addSeparator();
-    toolBar->addAction(actionQuit);
     toolBar->addSeparator();
 
     addToolBar(toolBar);
@@ -382,10 +376,6 @@ void DatabaseBrowser::retranslate()
     actionRemoveConnection->setText(tr("&Delete connection"));
     actionRemoveConnection->setShortcut(tr("Ctrl+D"));
     actionRemoveConnection->setStatusTip(tr("Delete current database connection"));
-
-    actionQuit->setText(tr("&Quit"));
-	actionQuit->setShortcut(tr("Ctrl+Q"));
-    actionQuit->setStatusTip(tr("Quit"));
 
     actionViewBrowser->setText(tr("Database"));
     actionViewLog->setText(tr("Messages"));

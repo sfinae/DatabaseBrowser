@@ -69,7 +69,6 @@ private:
     QAction *actionAddSqlView;
     QAction *actionExport;
     QAction *actionImport;
-    QAction *actionQuit;
     QAction *actionViewBrowser;
     QAction *actionViewLog;
     QAction *actionViewToolbar;
