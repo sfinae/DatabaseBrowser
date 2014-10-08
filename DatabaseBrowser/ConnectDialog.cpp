@@ -132,6 +132,7 @@ ConnectionDialog::ConnectionDialog(int numberOfConnection,
     connect(d_ptr->m_buttonConnect, SIGNAL(clicked()), this, SLOT(onConnect()));
     connect(d_ptr->m_comboDriver, SIGNAL(currentIndexChanged(int)), this, SLOT(onDatabaseDriverChanged(int)));
     connect(d_ptr->m_buttonChooseDb, SIGNAL(clicked()), this, SLOT(chooseDb()));
+    connect(d_ptr->m_editDatabaseName, SIGNAL(textChanged(QString)), this, SLOT(databaseNameChanged()));
 
     QStringList listOfDatabase = QSqlDatabase::drivers();
     d_ptr->m_comboDriver->addItems(listOfDatabase);
@@ -154,6 +155,9 @@ void ConnectionDialog::onConnect()
 {
     d_ptr->m_database = QSqlDatabase::addDatabase(d_ptr->m_comboDriver->currentText(),
                                                   QString("connect%1").arg(d_ptr->m_connectionNumber));
+
+    if (d_ptr->m_editDatabaseName->text().isEmpty())
+        return;
 
     d_ptr->m_database.setHostName(d_ptr->m_editHostName->text());
     d_ptr->m_database.setDatabaseName(d_ptr->m_editDatabaseName->text());
@@ -232,6 +236,18 @@ void ConnectionDialog::chooseDb()
 
     d_ptr->m_editDatabaseName->setText(selectedFiles.first());
     d_ptr->m_buttonConnect->setDisabled(selectedFiles.isEmpty());
+}
+
+void ConnectionDialog::databaseNameChanged()
+{
+    if (d_ptr->m_editDatabaseName->text().isEmpty() || !QFileInfo(d_ptr->m_editDatabaseName->text()).exists())
+    {
+        d_ptr->m_buttonConnect->setDisabled(true);
+    }
+    else
+    {
+        d_ptr->m_buttonConnect->setDisabled(false);
+    }
 }
 
 void ConnectionDialog::retranslate()

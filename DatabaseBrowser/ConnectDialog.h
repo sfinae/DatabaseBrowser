@@ -23,6 +23,7 @@ private slots:
     void onConnect();
     void onDatabaseDriverChanged(int driverIndex);
     void chooseDb();
+    void databaseNameChanged();
 
 protected:
     virtual void changeEvent(QEvent *event);
