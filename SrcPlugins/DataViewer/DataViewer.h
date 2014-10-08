@@ -23,6 +23,7 @@ public:
 
     virtual void onDatabaseItemRemoved();
     virtual void onDatabaseItemActivated(const DatabaseItem &item);
+    virtual bool hasValidDb() const;
 
     virtual QIcon icon() const;
     virtual QString statusTip() const;

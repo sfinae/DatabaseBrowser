@@ -244,6 +244,25 @@ void DatabaseBrowser::onRemoveConnection()
         }
 
         onTextEditAddString(tr("Connection removed"), BaseViewer::Message);
+
+        for (int index = 0; index < tabWidget->count();)
+        {
+            BaseViewer *viewer = qobject_cast<BaseViewer *>(tabWidget->widget(index));
+            if (!viewer)
+            {
+                continue;
+            }
+
+            if (!viewer->hasValidDb())
+            {
+                onCloseTab(index);
+            }
+            else
+            {
+                ++index;
+            }
+
+        }
     }
 }
 

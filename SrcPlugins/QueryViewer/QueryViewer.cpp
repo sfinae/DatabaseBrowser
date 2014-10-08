@@ -24,7 +24,7 @@ QueryViewer::QueryViewer()
     (*sqlView)->setModel(m_queryModel.data());
 
     sqlEdit = new QTextEdit(this);
-    Highlighter *highlighter = new Highlighter(sqlEdit->document());
+    new Highlighter(sqlEdit->document());
 
     pbClean = new QPushButton(this);
     pbSubmit = new QPushButton(this);
@@ -80,6 +80,11 @@ void QueryViewer::onDatabaseItemActivated(const DatabaseItem &item)
     const QString query("SELECT * FROM " + item.m_value + ";");
     configModel(query);
     sqlEdit->setText(query);
+}
+
+bool QueryViewer::hasValidDb() const
+{
+    return database.isValid();
 }
 
 void QueryViewer::onDatabaseItemRemoved()

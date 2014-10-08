@@ -39,6 +39,7 @@ public:
 
     QScopedPointer<QStandardItemModel> m_shemaModel;
     QScopedPointer<QSqlTableModel> m_sqlDataModel;
+    QSqlDatabase database;
 };
 
 void DataViewerPrivate::createModels()
@@ -123,6 +124,8 @@ void DataViewer::onDatabaseItemActivated(const DatabaseItem &item)
         return;
     }
 
+    d_ptr->database = item.m_database;
+
     // for table tableShema
     QSqlRecord record = item.m_database.record(item.m_value);
 
@@ -165,6 +168,11 @@ void DataViewer::onDatabaseItemActivated(const DatabaseItem &item)
     d_ptr->m_tab->setTabText(::Data, tr(::c_dataTable).arg(item.m_value));
 
     d_ptr->m_sqlDataModel.reset(modelData);
+}
+
+bool DataViewer::hasValidDb() const
+{
+    return d_ptr->database.isValid();
 }
 
 void DataViewer::onDatabaseItemRemoved()

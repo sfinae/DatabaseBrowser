@@ -65,6 +65,7 @@ public:
 
     virtual void onDatabaseItemRemoved() = 0;
     virtual void onDatabaseItemActivated(const DatabaseItem &item) = 0;
+    virtual bool hasValidDb() const = 0;
 
     // return a icon to menu and toolbar
     virtual QIcon icon() const
