@@ -13,6 +13,7 @@
 #include <QApplication>
 #include <QSqlError>
 #include <QEvent>
+#include <QFileDialog>
 
 class ConnectionDialogPrivate
 {
@@ -40,6 +41,7 @@ public:
 
     QPushButton *m_buttonConnect;
     QPushButton *m_buttonMore;
+    QPushButton *m_buttonChooseDb;
 };
 
 ConnectionDialog::ConnectionDialog(int numberOfConnection,
@@ -77,6 +79,9 @@ ConnectionDialog::ConnectionDialog(int numberOfConnection,
     d_ptr->m_buttonConnect = new QPushButton(this);
     d_ptr->m_buttonConnect->setDefault(true);
 
+    d_ptr->m_buttonChooseDb = new QPushButton(this);
+    d_ptr->m_buttonChooseDb->setText("...");
+
     QGridLayout *frameLayout = new QGridLayout(frame);
     frameLayout->addWidget(d_ptr->m_labelUserName, 0, 0);
     frameLayout->addWidget(d_ptr->m_editUserName, 0, 1);
@@ -86,6 +91,7 @@ ConnectionDialog::ConnectionDialog(int numberOfConnection,
     frameLayout->addWidget(d_ptr->m_editHostName, 2, 1);
     frameLayout->addWidget(d_ptr->m_labelDatabaseName, 3, 0);
     frameLayout->addWidget(d_ptr->m_editDatabaseName, 3, 1);
+    frameLayout->addWidget(d_ptr->m_buttonChooseDb, 3, 2);
     frameLayout->addWidget(d_ptr->m_labelPortNumber, 4, 0);
     frameLayout->addWidget(d_ptr->m_editPortNumber, 4, 1);
 
@@ -118,12 +124,14 @@ ConnectionDialog::ConnectionDialog(int numberOfConnection,
 
     d_ptr->m_editHostName->setText(d_ptr->m_loginSettings->value("Login/HostName").toString());
     d_ptr->m_editDatabaseName->setText(d_ptr->m_loginSettings->value("Login/DatabaseName").toString());
+    d_ptr->m_buttonConnect->setDisabled(d_ptr->m_loginSettings->value("Login/DatabaseName").toString().isEmpty());
     d_ptr->m_editUserName->setText(d_ptr->m_loginSettings->value("Login/UserName").toString());
     d_ptr->m_editPassword->setText(QString::null);
     d_ptr->m_editPortNumber->setText(d_ptr->m_loginSettings->value("Login/PortNumber").toString());
 
     connect(d_ptr->m_buttonConnect, SIGNAL(clicked()), this, SLOT(onConnect()));
     connect(d_ptr->m_comboDriver, SIGNAL(currentIndexChanged(int)), this, SLOT(onDatabaseDriverChanged(int)));
+    connect(d_ptr->m_buttonChooseDb, SIGNAL(clicked()), this, SLOT(chooseDb()));
 
     QStringList listOfDatabase = QSqlDatabase::drivers();
     d_ptr->m_comboDriver->addItems(listOfDatabase);
@@ -168,15 +176,12 @@ void ConnectionDialog::onConnect()
         d_ptr->m_loginSettings->endGroup();
 
         accept();
-        return;
     }
     else
     {
         QSqlDatabase::removeDatabase(QString("connect%1").arg(d_ptr->m_connectionNumber));
         QMessageBox::critical(0, tr("Can\'t open database "), d_ptr->m_database.lastError().text());
     }
-
-    //reject();
 }
 
 void ConnectionDialog::onDatabaseDriverChanged(int driverIndex)
@@ -211,6 +216,22 @@ void ConnectionDialog::onDatabaseDriverChanged(int driverIndex)
         d_ptr->m_labelPortNumber->show();
         d_ptr->m_editPortNumber->show();
     }
+}
+
+void ConnectionDialog::chooseDb()
+{
+    QFileDialog fd(this, "Choose DB");
+    fd.setFilter(QDir::AllEntries | QDir::Hidden | QDir::NoSymLinks);
+    fd.setDirectory(QDir::homePath());
+    fd.exec();
+    QStringList selectedFiles = fd.selectedFiles();
+    if (selectedFiles.isEmpty())
+    {
+        return;
+    }
+
+    d_ptr->m_editDatabaseName->setText(selectedFiles.first());
+    d_ptr->m_buttonConnect->setDisabled(selectedFiles.isEmpty());
 }
 
 void ConnectionDialog::retranslate()
